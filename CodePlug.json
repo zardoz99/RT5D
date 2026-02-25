@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RadioCodeplug",
+  "type": "object",
+  "properties": {
+    "VersionBlock": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "minItems": 128,
+      "maxItems": 128
+    },
+
+    "DtmfSettings": {
+      "type": "object",
+      "properties": {
+        "CurrentIdDigits": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+          "maxItems": 5
+        },
+        "PttId": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "DurationIndex": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "IntervalIndex": { "type": "integer", "minimum": 0, "maximum": 4 }
+      },
+      "required": ["PttId", "DurationIndex", "IntervalIndex"]
+    },
+
+    "DtmfGroups": {
+      "type": "array",
+      "minItems": 15,
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "properties": {
+          "Digits": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+            "maxItems": 6
+          },
+          "IsEmpty": { "type": "boolean" }
+        }
+      }
+    },
+
+    "EncryptionKeys": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "properties": {
+          "Algorithm": {
+            "type": "string",
+            "enum": ["Arc4", "Aes128", "Aes256"]
+          },
+          "KeyHex": { "type": "string" },
+          "IsEmpty": { "type": "boolean" }
+        },
+        "required": ["Algorithm", "KeyHex", "IsEmpty"]
+      }
+    },
+
+    "Contacts": {
+      "type": "array",
+      "minItems": 4000,
+      "maxItems": 4000,
+      "items": {
+        "type": "object",
+        "properties": {
+          "CallType": { "type": "integer", "minimum": 0, "maximum": 2 },
+          "CallId": { "type": "integer", "minimum": 0, "maximum": 16777215 },
+          "Name": { "type": "string" },
+          "IsAllCall": { "type": "boolean" },
+          "IsEmpty": { "type": "boolean" }
+        },
+        "required": ["CallType", "CallId", "Name", "IsEmpty"]
+      }
+    },
+
+    "RxGroups": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": { "type": "string" },
+          "MemberIds": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1, "maximum": 16777215 },
+            "maxItems": 32
+          }
+        },
+        "required": ["Name", "MemberIds"]
+      }
+    },
+
+    "Channels": {
+      "type": "array",
+      "minItems": 1024,
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "properties": {
+          "RxFrequencyHz": { "type": "integer", "minimum": 0 },
+          "TxFrequencyHz": { "type": "integer", "minimum": 0 },
+
+          "RxSubAudio": {
+            "type": "object",
+            "properties": {
+              "Kind": { "type": "string", "enum": ["Off", "Ctcss", "Dcs"] },
+              "CtcssHz": { "type": "number" },
+              "DcsIndex": { "type": "integer" }
+            }
+          },
+
+          "TxSubAudio": {
+            "type": "object",
+            "properties": {
+              "Kind": { "type": "string", "enum": ["Off", "Ctcss", "Dcs"] },
+              "CtcssHz": { "type": "number" },
+              "DcsIndex": { "type": "integer" }
+            }
+          },
+
+          "SignalingCode": { "type": "integer", "minimum": 0, "maximum": 15 },
+          "ChannelPttId": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "IsAnalog": { "type": "boolean" },
+          "FlagB": { "type": "boolean" },
+          "TxPower": { "type": "integer", "minimum": 0, "maximum": 2 },
+          "Scramble": { "type": "integer", "minimum": 0, "maximum": 8 },
+          "Encryption": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "BusyLockout": { "type": "integer", "minimum": 0, "maximum": 1 },
+          "ScanAdd": { "type": "integer", "minimum": 0, "maximum": 1 },
+          "TimeSlot": { "type": "integer", "minimum": 0, "maximum": 1 },
+          "ColorCode": { "type": "integer", "minimum": 0, "maximum": 15 },
+          "RxGroupIndex": { "type": "integer", "minimum": 0, "maximum": 32 },
+          "EncKeyIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+          "DmrMode": { "type": "integer", "minimum": 0, "maximum": 1 },
+          "FhssCode": { "type": ["string", "null"] },
+          "Name": { "type": "string" },
+          "ContactIndex": { "type": "integer", "minimum": 0, "maximum": 65535 },
+          "IsEmpty": { "type": "boolean" }
+        },
+        "required": ["RxFrequencyHz", "TxFrequencyHz", "IsAnalog", "Name"]
+      }
+    },
+
+    "VfoA": {
+      "type": "object",
+      "properties": {
+        "RxFrequencyHz": { "type": "integer" },
+        "TxFrequencyHz": { "type": "integer" },
+        "SignalingCode": { "type": "integer" },
+        "IsAnalog": { "type": "boolean" },
+        "FlagB": { "type": "boolean" },
+        "TxPower": { "type": "integer" },
+        "Scramble": { "type": "integer" },
+        "Encryption": { "type": "integer" },
+        "BusyLockout": { "type": "integer" },
+        "TimeSlot": { "type": "integer" },
+        "ColorCode": { "type": "integer" },
+        "RxGroupIndex": { "type": "integer" },
+        "EncKeyIndex": { "type": "integer" },
+        "DmrMode": { "type": "integer" },
+        "StepFreqIndex": { "type": "integer" },
+        "ContactIndex": { "type": "integer" }
+      }
+    },
+
+    "VfoB": { "$ref": "#/properties/VfoA" },
+
+    "OptionalPart1": {
+      "type": "object",
+      "properties": {
+        "AnalogSql": { "type": "integer" },
+        "PowerSave": { "type": "integer" },
+        "Vox": { "type": "integer" },
+        "AutoBacklight": { "type": "integer" },
+        "Tdr": { "type": "integer" },
+        "Tot": { "type": "integer" },
+        "Beep": { "type": "integer" },
+        "Voice": { "type": "integer" },
+        "Language": { "type": "integer" },
+        "SideTone": { "type": "integer" },
+        "ScanMode": { "type": "integer" },
+        "PttId": { "type": "integer" },
+        "IdDelayTime": { "type": "integer" },
+        "DisplayModeA": { "type": "integer" },
+        "DisplayModeB": { "type": "integer" },
+        "AutoLock": { "type": "integer" },
+        "SosMode": { "type": "integer" },
+        "AlarmSound": { "type": "integer" },
+        "TdrTx": { "type": "integer" },
+        "TailClear": { "type": "integer" }
+      }
+    },
+
+    "OptionalPart2": {
+      "type": "object",
+      "properties": {
+        "RawBytes": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "minItems": 32,
+          "maxItems": 32
+        }
+      }
+    }
+  },
+
+  "required": [
+    "VersionBlock",
+    "DtmfSettings",
+    "DtmfGroups",
+    "EncryptionKeys",
+    "Contacts",
+    "RxGroups",
+    "Channels",
+    "VfoA",
+    "VfoB",
+    "OptionalPart1",
+    "OptionalPart2"
+  ]
+}

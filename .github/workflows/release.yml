@@ -15,7 +15,7 @@ env:
   BUILD_CONFIGURATION: Release
   PROJECT_ROOT: src
   RUNTIME_ID: win-x64
-  APP_NAME: MyApp
+  APP_NAME: RT5D
 
 jobs:
   build:
