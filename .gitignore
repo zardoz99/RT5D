@@ -1,0 +1,49 @@
+## Visual Studio & .NET ##
+bin/
+obj/
+[Bb]uild/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Editors ##
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sln.iml
+
+## NuGet ##
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+## Tests ##
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+## Build Outputs ##
+publish/
+artifacts/
+
+## OS ##
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Temporary ##
+*.tmp
+*.bak
+*.swp
+*~
+
+## Keep GitHub workflows ##
+!.github/
+!.github/workflows/

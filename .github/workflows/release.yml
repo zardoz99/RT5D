@@ -1,0 +1,79 @@
+name: Build and Release (CD)
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "V*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  BUILD_CONFIGURATION: Release
+  PROJECT_ROOT: src
+  RUNTIME_ID: win-x64
+  APP_NAME: MyApp
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Validate repository structure
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ env.PROJECT_ROOT }}")) {
+            Write-Error "Expected project root '${{ env.PROJECT_ROOT }}' not found."
+          }
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_ROOT }}
+
+      - name: Publish
+        run: >
+          dotnet publish ${{ env.PROJECT_ROOT }}
+          -c ${{ env.BUILD_CONFIGURATION }}
+          -r ${{ env.RUNTIME_ID }}
+          --self-contained false
+          -o publish
+          /p:GeneratePackageOnBuild=false
+          
+      - name: Prepare artifact directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\payload | Out-Null
+          Copy-Item publish\* artifacts\payload -Recurse -Force
+
+      - name: Create ZIP package
+        shell: pwsh
+        run: |
+          $zipName = "${{ env.APP_NAME }}-${{ github.ref_name }}-${{ env.RUNTIME_ID }}.zip"
+          Compress-Archive -Path artifacts\payload\* -DestinationPath artifacts\$zipName -Force
+
+      - name: Generate SHA256 checksum
+        shell: pwsh
+        run: |
+          $zipName = "${{ env.APP_NAME }}-${{ github.ref_name }}-${{ env.RUNTIME_ID }}.zip"
+          certutil -hashfile artifacts\$zipName SHA256 > artifacts\$zipName.sha256
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

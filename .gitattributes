@@ -1,0 +1,15 @@
+# Enforce default line endings
+* text=auto
+
+# Ensure C# and project files always use CRLF (Critical for Windows)
+*.cs text=auto diff=csharp
+*.sln text=auto eol=crlf
+*.csproj text=auto eol=crlf
+*.props text=auto eol=crlf
+*.ps1 text=auto eol=crlf
+*.json text=auto
+
+# Binary files
+*.png binary
+*.jpg binary
+*.dll binary

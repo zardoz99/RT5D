@@ -1,0 +1,54 @@
+name: Build (CI)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  BUILD_CONFIGURATION: Release
+  PROJECT_ROOT: src
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: '**/packages.lock.json'
+
+    - name: Validate repository structure
+      shell: pwsh
+      run: |
+        if (-not (Test-Path "${{ env.PROJECT_ROOT }}")) {
+          Write-Error "Expected project root '${{ env.PROJECT_ROOT }}' not found. This repository is a template."
+        }
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.PROJECT_ROOT }}
+
+    - name: Build
+      run: >
+        dotnet build ${{ env.PROJECT_ROOT }}
+        -c ${{ env.BUILD_CONFIGURATION }}
+        --no-restore
+
+    - name: Test
+      run: >
+        dotnet test ${{ env.PROJECT_ROOT }}
+        -c ${{ env.BUILD_CONFIGURATION }}
+        --no-build
+        --verbosity normal
