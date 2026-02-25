@@ -45,21 +45,36 @@ namespace RT5D
             {
                 ReadTimeout  = DefaultPortTimeoutMs,
                 WriteTimeout = DefaultPortTimeoutMs,
-                // No hardware or software flow control (§2).
+                // No software flow control (§2).
+                // DTR and RTS must be asserted: the RT-5D programming cable uses
+                // these lines to power and enable its internal switching circuitry.
+                // Without them the cable sits in an undefined state and the radio
+                // never receives data, even though the virtual COM port appears open.
                 Handshake    = Handshake.None,
-                DtrEnable    = false,
-                RtsEnable    = false,
+                DtrEnable    = true,
+                RtsEnable    = true,
             };
         }
 
         // ── Lifecycle ───────────────────────────────────────────────────────────
 
         /// <summary>Opens the serial port.</summary>
+        /// <remarks>
+        /// A short delay is inserted after opening to allow the USB-serial adapter
+        /// (CH340, CP210x, etc.) to assert DTR/RTS and the cable's switching
+        /// circuitry to reach a stable state before the first byte is transmitted.
+        /// Without this pause the handshake frame can be sent before the cable is
+        /// ready and the radio never responds.
+        /// </remarks>
         public void Open()
         {
             ThrowIfDisposed();
             if (!_port.IsOpen)
+            {
                 _port.Open();
+                // Allow the adapter and cable circuitry to stabilise.
+                System.Threading.Thread.Sleep(200);
+            }
         }
 
         /// <summary>Closes the serial port without disposing.</summary>
