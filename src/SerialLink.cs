@@ -88,6 +88,20 @@ namespace RT5D
         public string PortName => _port.PortName;
 
         // ── I/O primitives ──────────────────────────────────────────────────────
+        //
+        // IMPORTANT — why we use Task.Run + SerialPort.Read rather than BaseStream.ReadAsync:
+        //
+        // On Windows, SerialPort.BaseStream.ReadAsync does NOT honour ReadTimeout.
+        // It returns 0 bytes immediately when the receive buffer is empty instead of
+        // blocking until data arrives or the timeout expires. This works through a
+        // virtual COM port (which buffers data before the read fires) but fails
+        // against a real USB-serial adapter where the radio's response arrives
+        // tens of milliseconds after the request is sent.
+        //
+        // SerialPort.Read() (the synchronous API) does honour ReadTimeout correctly.
+        // We offload it to the thread pool via Task.Run so the calling async chain
+        // is not blocked, and we link the CancellationToken so that session-level
+        // timeouts still work.
 
         /// <summary>
         /// Writes <paramref name="buffer"/> to the serial port.
@@ -102,10 +116,11 @@ namespace RT5D
             await _writeLock.WaitAsync(ct).ConfigureAwait(false);
             try
             {
-                // SerialPort.BaseStream supports async I/O.
-                await _port.BaseStream.WriteAsync(buffer, 0, buffer.Length, ct)
-                                      .ConfigureAwait(false);
-                await _port.BaseStream.FlushAsync(ct).ConfigureAwait(false);
+                // Write on a thread-pool thread so the async chain is not blocked.
+                // SerialPort.Write() is synchronous but fast — the OS buffers the
+                // bytes immediately and returns as soon as they are queued.
+                await Task.Run(() => _port.Write(buffer, 0, buffer.Length), ct)
+                          .ConfigureAwait(false);
             }
             finally
             {
@@ -124,7 +139,7 @@ namespace RT5D
             if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
             if (count == 0) return Array.Empty<byte>();
 
-            var buffer  = new byte[count];
+            var buffer   = new byte[count];
             int received = 0;
 
             while (received < count)
@@ -134,13 +149,28 @@ namespace RT5D
                 int n;
                 try
                 {
-                    n = await _port.BaseStream
-                                   .ReadAsync(buffer, received, count - received, ct)
-                                   .ConfigureAwait(false);
+                    // Capture locals for the lambda.
+                    var port    = _port;
+                    var buf     = buffer;
+                    var offset  = received;
+                    var want    = count - received;
+
+                    // Run the blocking Read on the thread pool.
+                    // SerialPort.Read blocks until at least 1 byte arrives or
+                    // ReadTimeout elapses (throws TimeoutException on timeout).
+                    n = await Task.Run(() => port.Read(buf, offset, want), ct)
+                                  .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     throw;
+                }
+                catch (TimeoutException)
+                {
+                    // Convert SerialPort timeout to OperationCanceledException so
+                    // ProtocolV2's retry logic sees a standard cancellation signal.
+                    throw new OperationCanceledException(
+                        $"Serial read timed out after {received}/{count} bytes.", ct);
                 }
                 catch (Exception ex)
                 {
